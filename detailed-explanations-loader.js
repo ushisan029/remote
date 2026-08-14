@@ -46,4 +46,12 @@
       return response;
     }
   };
+
+  function labelStudyExplanations(){
+    document.querySelectorAll('.explain > strong').forEach(el=>{
+      if(el.textContent.trim()==='解説') el.textContent='解説（学習用）';
+    });
+  }
+  new MutationObserver(labelStudyExplanations).observe(document.documentElement,{subtree:true,childList:true});
+  addEventListener('DOMContentLoaded',labelStudyExplanations);
 })();
