@@ -15,13 +15,17 @@
 
   function getPatches(){
     if(!patchPromise){
-      patchPromise=Promise.all(FILES.map(url=>upstream(url,{cache:'no-store'}).then(r=>{
-        if(!r.ok) throw new Error(`${url}: ${r.status}`);
-        return r.json();
-      }))).then(all=>{
-        const patches=all.flatMap(j=>j.PATCHES||[]);
-        return new Map(patches.map(p=>[p.id,p]));
-      });
+      patchPromise=Promise.all(FILES.map(async url=>{
+        try{
+          const r=await upstream(url,{cache:'no-store'});
+          if(!r.ok) throw new Error(`${url}: ${r.status}`);
+          const j=await r.json();
+          return Array.isArray(j.PATCHES)?j.PATCHES:[];
+        }catch(e){
+          console.warn('詳細解説ファイルを読み込めませんでした',url,e);
+          return [];
+        }
+      })).then(groups=>new Map(groups.flat().map(p=>[p.id,p])));
     }
     return patchPromise;
   }
