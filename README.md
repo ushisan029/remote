@@ -12,3 +12,6 @@
 - 学習履歴の端末内保存とバックアップ/復元
 
 GitHub Pages で公開する構成です。
+
+## Production
+GitHub Pages への本番デプロイは GitHub Actions から実行します。
