@@ -1,1 +1,1 @@
-{"DATA_VERSION":"0.4.0-dev1","files":["./data/r07-general-01-05.json","./data/r07-general-06-10.json"],"IMPORT_STATUS":{"industrial_general":"令和7年度 問1〜10を本番反映済み。問11〜30を投入中","industrial_law":"令和7年度 全15問を抽出・整形済み。本番投入待ち","machine_safety":"令和4〜7年度の記述式16問を抽出・整形済み。本番投入待ち"}}
+{"DATA_VERSION":"0.4.0-dev2","files":["./data/r07-general-01-05.json","./data/r07-general-06-10.json","./data/machine-r04.json"],"IMPORT_STATUS":{"industrial_general":"令和7年度 問1〜10を本番反映済み。問11〜30を投入中","industrial_law":"令和7年度 全15問を抽出・整形済み。本番投入待ち","machine_safety":"令和4年度の記述式4問を本番反映済み。令和5〜7年度を投入中"}}
