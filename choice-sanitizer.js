@@ -10,21 +10,21 @@
     s=s.replace(/^[\s　]*[〇○◯◎]+[\s　:：・.-]*/u,'');
     s=s.replace(/[\s　:：・.-]*[〇○◯◎]+[\s　]*$/u,'');
 
+    // Choice text should contain only the choice itself.  Remove wording that
+    // explicitly tells the learner which item is "correct/appropriate".
+    s=s.replace(/^[\s　]*(?:正しいもの|適切なもの|誤っているもの|適切でないもの)[\s　]*(?:は|[:：])[\s　]*/u,'');
+
     // If a choice contains an answer mark anywhere, remove the mark and common
     // answer-leak wording while preserving the actual choice text/combinations.
     if(answerMark.test(s)){
       s=s.replace(/(?:正答|正解)[\s　]*(?:は|[:：])?[\s　]*/gu,'');
-      s=s.replace(/(?:正しいもの|適切なもの)[\s　]*は[\s　]*/gu,'');
+      s=s.replace(/(?:正しいもの|適切なもの|誤っているもの|適切でないもの)[\s　]*は[\s　]*/gu,'');
       s=s.replace(/[〇○◯◎]/gu,'');
     }
 
-    // Also normalize explicit answer annotations that may have been appended by
-    // PDF extraction, e.g. "（正答：3）" or "【正解 ②】".
+    // Remove explicit answer annotations appended by PDF extraction,
+    // e.g. "（正答：3）", "【正解 ②】" or " 正答：イ".
     s=s.replace(/[\s　]*(?:[（(【\[]\s*)?(?:正答|正解)[\s　]*[:：]?[\s　]*(?:[1-5①②③④⑤]|[イロハニホヘト])+[\s　]*(?:[）)】\]])?[\s　]*$/u,'');
-
-    // A combination choice should be the combination itself, not a leading hint
-    // such as "正しいものはイとロ".
-    s=s.replace(/^[\s　]*(?:正しいもの|適切なもの)[\s　]*は[\s　]*(?=[イロハニホヘトA-EＡ-Ｅa-eａ-ｅ1-5①②③④⑤])/u,'');
 
     return s.replace(/[\s　]+$/u,'').trimStart();
   }
