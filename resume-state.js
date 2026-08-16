@@ -12,8 +12,23 @@
     return `${state.subject}|${state.mode}|${year}`;
   }
 
-  function persist(){
+  function cloneMap(value=resumeMap){
+    try{return JSON.parse(JSON.stringify(value||{}))}catch{return {}}
+  }
+
+  function persist(notify=true){
     try{localStorage.setItem(RESUME_STORE,JSON.stringify(resumeMap))}catch{}
+    if(notify){
+      try{window.dispatchEvent(new CustomEvent('rouan:resume-changed'))}catch{}
+    }
+  }
+
+  function sameResume(a,b){
+    if(!a||!b)return false;
+    return a.questionId===b.questionId&&
+      a.index===b.index&&
+      a.selected===b.selected&&
+      a.revealed===b.revealed;
   }
 
   function rememberCurrent(){
@@ -23,14 +38,16 @@
     const pos=((state.index%set.length)+set.length)%set.length;
     const q=set[pos];
     if(!q?.id) return;
-    resumeMap[resumeKey()]={
+    const key=resumeKey();
+    const next={
       questionId:q.id,
       index:pos,
       selected:Number.isInteger(state.selected)?state.selected:null,
-      revealed:!!state.revealed,
-      updatedAt:new Date().toISOString()
+      revealed:!!state.revealed
     };
-    persist();
+    if(sameResume(resumeMap[key],next)) return;
+    resumeMap[key]={...next,updatedAt:new Date().toISOString()};
+    persist(true);
   }
 
   function restoreCurrent(){
@@ -50,7 +67,6 @@
     if(pos<0) pos=0;
     state.index=pos;
 
-    // Restore the result screen only when the saved question itself still exists.
     if(saved.questionId&&set[pos]?.id===saved.questionId){
       const choices=set[pos].choices||[];
       if(Number.isInteger(saved.selected)&&saved.selected>=0&&saved.selected<choices.length){
@@ -60,17 +76,36 @@
     }
   }
 
+  function mergeResume(incoming){
+    if(!incoming||typeof incoming!=='object'||Array.isArray(incoming)) return false;
+    let changed=false;
+    for(const [key,value] of Object.entries(incoming)){
+      if(!value||typeof value!=='object') continue;
+      const local=resumeMap[key];
+      const localTime=Date.parse(local?.updatedAt||0)||0;
+      const remoteTime=Date.parse(value.updatedAt||0)||0;
+      if(!local||remoteTime>localTime){
+        resumeMap[key]=cloneMap(value);
+        changed=true;
+      }
+    }
+    if(changed) persist(false);
+    return changed;
+  }
+
+  function replaceResume(incoming){
+    resumeMap=(incoming&&typeof incoming==='object'&&!Array.isArray(incoming))?cloneMap(incoming):{};
+    persist(false);
+  }
+
   const originalRender=render;
   render=function(){
     rememberCurrent();
     return originalRender();
   };
 
-  // Existing handlers call resetQuiz() after changing subject/year/mode.
-  // Change its meaning from "go to question 1" to "restore this condition's last position".
   resetQuiz=function(){restoreCurrent()};
 
-  // Extra safety for closing Safari / Home Screen PWA directly.
   window.addEventListener('pagehide',rememberCurrent);
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden') rememberCurrent();
@@ -79,6 +114,9 @@
   window.rouanResume={
     remember:rememberCurrent,
     restore:restoreCurrent,
-    clear(){resumeMap={};persist()}
+    dump(){return cloneMap()},
+    merge:mergeResume,
+    replace:replaceResume,
+    clear(){resumeMap={};persist(true)}
   };
 })();
