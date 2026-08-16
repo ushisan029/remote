@@ -98,6 +98,16 @@
     persist(false);
   }
 
+  function removeResume(key){
+    const target=key||resumeKey();
+    if(Object.prototype.hasOwnProperty.call(resumeMap,target)){
+      delete resumeMap[target];
+      persist(true);
+      return true;
+    }
+    return false;
+  }
+
   const originalRender=render;
   render=function(){
     rememberCurrent();
@@ -117,6 +127,7 @@
     dump(){return cloneMap()},
     merge:mergeResume,
     replace:replaceResume,
+    remove:removeResume,
     clear(){resumeMap={};persist(true)}
   };
 })();
