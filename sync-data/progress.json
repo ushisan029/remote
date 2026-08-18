@@ -1,0 +1,163 @@
+{
+  "version": 3,
+  "format": "rouan-dojo-progress-json-v1",
+  "app": "rouan-dojo",
+  "updatedAt": "2026-08-18T15:52:50.307Z",
+  "deviceId": "ba6ca94b-2d26-4970-a276-fe736a7ebab4",
+  "historyResetAt": null,
+  "attempts": [
+    {
+      "id": "6c18eaee-3b2c-41f7-8e32-9ae68a2b1b77",
+      "questionId": "r06-law-01",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:50:40.973Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "dfc226be-01b8-4665-b7c3-caa538f419af",
+      "questionId": "r06-law-02",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:50:49.847Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "20c09841-975b-437c-9d1e-ef77bfd255e2",
+      "questionId": "r06-law-03",
+      "selectedIndex": 0,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:50:53.422Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "fbcc5495-c5f5-470b-bf6b-b481d4bec57e",
+      "questionId": "r06-law-04",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:52:36.102Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "b4b040dc-0eed-4f3c-95fb-41b68769902c",
+      "questionId": "r06-law-05",
+      "selectedIndex": 3,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:53:13.970Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "a2976ce9-e9f1-415c-80ba-bfaf5541bf21",
+      "questionId": "r06-law-06",
+      "selectedIndex": 2,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:53:29.557Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "0ee94a84-5a6c-457b-8df4-99e2e5619aa5",
+      "questionId": "r06-law-07",
+      "selectedIndex": 0,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:54:51.299Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "b0eae42d-85e2-4b6e-af83-2cfad1493690",
+      "questionId": "r06-law-08",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-16T09:55:27.533Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "3e38caa2-7cf3-4430-b75b-7484e6f58fa1",
+      "questionId": "r06-law-09",
+      "selectedIndex": 4,
+      "correct": false,
+      "answeredAt": "2026-08-16T09:57:34.214Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "a435e2c2-2889-44e8-8eb5-db31d65d3924",
+      "questionId": "r06-law-10",
+      "selectedIndex": 3,
+      "correct": false,
+      "answeredAt": "2026-08-16T10:00:21.314Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "4e7bcb21-df52-4927-bfc2-d49c5376135d",
+      "questionId": "r06-law-11",
+      "selectedIndex": 4,
+      "correct": true,
+      "answeredAt": "2026-08-16T10:14:30.963Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "34a056b8-0a34-42ac-99e8-a581361cad09",
+      "questionId": "r06-law-12",
+      "selectedIndex": 4,
+      "correct": true,
+      "answeredAt": "2026-08-16T10:16:16.753Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "753fb4bf-07b3-48d9-9c2c-bd7ea66b2ada",
+      "questionId": "r06-law-13",
+      "selectedIndex": 4,
+      "correct": false,
+      "answeredAt": "2026-08-16T10:18:28.351Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "96a6cde8-fe31-4249-8446-928baf23c54e",
+      "questionId": "r06-law-14",
+      "selectedIndex": 2,
+      "correct": false,
+      "answeredAt": "2026-08-16T10:19:11.735Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "1bbb4d86-a6a2-4e0f-804e-7539a7553db3",
+      "questionId": "r06-law-15",
+      "selectedIndex": 2,
+      "correct": false,
+      "answeredAt": "2026-08-16T10:19:59.042Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "e4363e84-cee6-4de9-8d9f-64b161a43463",
+      "questionId": "r05-law-01",
+      "selectedIndex": 4,
+      "correct": true,
+      "answeredAt": "2026-08-16T12:56:41.059Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "ab36632e-b437-46f2-80a1-11a6766b2a4f",
+      "questionId": "r05-law-02",
+      "selectedIndex": 1,
+      "correct": false,
+      "answeredAt": "2026-08-16T13:11:02.823Z",
+      "assessmentType": "choice"
+    }
+  ],
+  "manualWeak": [],
+  "resume": {
+    "industrial_law|past|令和6年度": {
+      "questionId": "r06-law-01",
+      "index": 0,
+      "selected": null,
+      "revealed": false,
+      "updatedAt": "2026-08-16T10:20:23.343Z"
+    },
+    "industrial_law|past|令和5年度": {
+      "questionId": "r05-law-02",
+      "index": 1,
+      "selected": 1,
+      "revealed": true,
+      "updatedAt": "2026-08-16T13:11:02.824Z"
+    }
+  }
+}
