@@ -9,7 +9,7 @@
     '令和4年度|1':'r4-q1.b64','令和4年度|2':'r4-q2.b64','令和4年度|3':'r4-q3.b64','令和4年度|4':'r4-q4.b64',
     '令和5年度|2':'r5-q2.b64','令和5年度|3':'r5-q3.b64','令和5年度|4':'r5-q4.b64',
     '令和6年度|1':'r6-q1.b64','令和6年度|2':'r6-q2.b64','令和6年度|3':'r6-q3.b64','令和6年度|4':'r6-q4.b64',
-    '令和7年度|1':'r7-q1.b64','令和7年度|2':'r7-q2.b64','令和7年度|4':'r7-q4.b64'
+    '令和7年度|1':['r7-q1-1.b64','r7-q1-2.b64','r7-q1-3.b64','r7-q1-4.b64'],'令和7年度|2':'r7-q2.b64','令和7年度|4':'r7-q4.b64'
   };
   const cache=new Map();
   const style=document.createElement('style');
@@ -36,13 +36,18 @@
     const year=text.match(/令和[4-7]年度/)?.[0],q=text.match(/問\s*(\d+)/)?.[1];
     return year&&q?{year,q:Number(q)}:null;
   }
-  async function loadAsset(filename){
-    if(cache.has(filename))return cache.get(filename);
-    const r=await fetch(`./assets/machine/${filename}`,{cache:'no-cache'});
-    if(!r.ok)throw new Error(`図表ファイル ${r.status}`);
-    const b64=(await r.text()).trim();
+  async function loadAsset(spec){
+    const files=Array.isArray(spec)?spec:[spec],key=files.join('|');
+    if(cache.has(key))return cache.get(key);
+    const chunks=[];
+    for(const filename of files){
+      const r=await fetch(`./assets/machine/${filename}`,{cache:'no-cache'});
+      if(!r.ok)throw new Error(`図表ファイル ${r.status}`);
+      chunks.push((await r.text()).trim());
+    }
+    const b64=chunks.join('');
     if(!b64.startsWith('iVBOR'))throw new Error('図表データ形式が不正です');
-    const src=`data:image/png;base64,${b64}`;cache.set(filename,src);return src;
+    const src=`data:image/png;base64,${b64}`;cache.set(key,src);return src;
   }
   function openModal(src,label){
     document.querySelector('.figure-modal')?.remove();
@@ -68,14 +73,14 @@
       if(panel.dataset.state==='none')return;panel.dataset.state='none';
       panel.innerHTML=`<h3>原問題資料</h3><p class="fig-note">この問題には切り出し対象の図表がありません。</p><div class="figure-actions">${pages.map(p=>`<a class="figure-open" target="_blank" rel="noopener noreferrer" href="${pageUrl(source.url,p)}">原問題 p.${p}</a>`).join('')}</div>`;return;
     }
-    if(panel.dataset.asset===assetName&&(panel.dataset.state==='loading'||panel.dataset.state==='done'))return;
-    panel.dataset.asset=assetName;panel.dataset.state='loading';panel.innerHTML='<h3>原問題の図・表</h3><div class="figure-wait">図表を読み込んでいます…</div>';
+    if(panel.dataset.asset===String(assetName)&&(panel.dataset.state==='loading'||panel.dataset.state==='done'))return;
+    panel.dataset.asset=String(assetName);panel.dataset.state='loading';panel.innerHTML='<h3>原問題の図・表</h3><div class="figure-wait">図表を読み込んでいます…</div>';
     try{
-      const src=await loadAsset(assetName);if(panel.dataset.asset!==assetName)return;
+      const src=await loadAsset(assetName);if(panel.dataset.asset!==String(assetName))return;
       const label=`${key.year} 機械安全 問${key.q} 原問題の図・表`,firstPage=pages[0]||1;panel.dataset.state='done';
       panel.innerHTML=`<h3>原問題の図・表</h3><p class="fig-note">問題資料から図・表だけを切り出しています。問題文と同時に確認できます。</p><div class="figure-image-wrap"><img class="figure-image" src="${src}" alt="${label}"></div><div class="figure-actions"><button class="figure-open" data-enlarge>大きく表示</button><a class="figure-open" target="_blank" rel="noopener noreferrer" href="${pageUrl(source.url,firstPage)}">原問題PDF</a></div>`;
       panel.querySelector('img').onclick=()=>openModal(src,label);panel.querySelector('[data-enlarge]').onclick=()=>openModal(src,label);
-    }catch(e){if(panel.dataset.asset!==assetName)return;panel.dataset.state='error';panel.innerHTML=`<h3>原問題の図・表</h3><div class="figure-error">図表を読み込めませんでした。${String(e.message||e)}</div><div class="figure-actions">${pages.map(p=>`<a class="figure-open" target="_blank" rel="noopener noreferrer" href="${pageUrl(source.url,p)}">原問題 p.${p}</a>`).join('')}</div>`;}
+    }catch(e){if(panel.dataset.asset!==String(assetName))return;panel.dataset.state='error';panel.innerHTML=`<h3>原問題の図・表</h3><div class="figure-error">図表を読み込めませんでした。${String(e.message||e)}</div><div class="figure-actions">${pages.map(p=>`<a class="figure-open" target="_blank" rel="noopener noreferrer" href="${pageUrl(source.url,p)}">原問題 p.${p}</a>`).join('')}</div>`;}
   }
   let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;renderPanel()})}
   new MutationObserver(queue).observe(document.documentElement,{subtree:true,childList:true});addEventListener('DOMContentLoaded',queue);queue();
