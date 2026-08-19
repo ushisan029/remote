@@ -1,16 +1,16 @@
 name: Import machine exam PDFs once
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/import-machine-pdfs-once.yml'
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
+  issues: read
 
 jobs:
   import-pdfs:
+    if: github.event.issue.title == '[system] import machine PDFs once'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -46,11 +46,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/machine/pdf/*.pdf
-          if git diff --cached --quiet; then
-            echo 'PDFs already match; nothing to commit.'
-            exit 0
-          fi
           git commit -m 'Import original machine safety exam PDFs'
           git push origin HEAD:main
-
-# one-time import trigger: 2026-08-19
