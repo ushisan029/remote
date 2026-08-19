@@ -1,0 +1,40 @@
+name: Generate machine safety figures
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/generate-machine-figures.py'
+      - '.github/workflows/generate-machine-figures.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pymupdf pillow
+      - name: Generate cropped figures
+        run: python scripts/generate-machine-figures.py
+      - name: Commit generated assets
+        run: |
+          if git diff --quiet -- assets/machine; then
+            echo 'No generated asset changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/machine
+          git commit -m 'Generate cropped machine safety figures'
+          git push
