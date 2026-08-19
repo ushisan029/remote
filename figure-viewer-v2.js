@@ -57,7 +57,7 @@
     if(cache.has(key))return cache.get(key);
     const chunks=[];
     for(const filename of files){
-      const r=await fetch(`./assets/machine/${filename}?v=20260819-2`,{cache:'no-store'});
+      const r=await fetch(`./assets/machine/${filename}?v=20260819-3`,{cache:'no-store'});
       if(!r.ok)throw new Error(`${filename}: HTTP ${r.status}`);
       chunks.push((await r.text()).replace(/\s+/g,''));
     }
