@@ -22,11 +22,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/r56 assets/machine/figures
-          : > /tmp/r56/archive.xz
-          for p in .r56-transfer/part-*; do
-            echo "decode $p"
-            base64 -d "$p" >> /tmp/r56/archive.xz
-          done
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          parts=sorted(Path('.r56-transfer').glob('part-*'))
+          text=''.join(p.read_text() for p in parts)
+          clean=''.join(re.findall(r'[A-Za-z0-9+/]', text))
+          clean += '=' * ((-len(clean)) % 4)
+          raw=base64.b64decode(clean)
+          Path('/tmp/r56/archive.xz').write_bytes(raw)
+          print('parts=',len(parts),'base64_chars=',len(clean),'decoded_bytes=',len(raw),'magic=',raw[:6].hex())
+          PY
           xz -t /tmp/r56/archive.xz
           xz -dc /tmp/r56/archive.xz > /tmp/r56/archive
           mkdir -p /tmp/r56/out
