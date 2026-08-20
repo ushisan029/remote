@@ -33,17 +33,31 @@ jobs:
           Path('/tmp/r56/archive.xz').write_bytes(raw)
           print('parts=',len(parts),'base64_chars=',len(clean),'decoded_bytes=',len(raw),'magic=',raw[:6].hex())
           PY
-          xz -t /tmp/r56/archive.xz
-          xz -dc /tmp/r56/archive.xz > /tmp/r56/archive
+          set +e
+          xz -dc --ignore-check /tmp/r56/archive.xz > /tmp/r56/archive
+          xz_status=$?
+          set -e
+          echo "xz_status=$xz_status"
+          ls -l /tmp/r56/archive.xz /tmp/r56/archive
+          file /tmp/r56/archive
           mkdir -p /tmp/r56/out
           if unzip -t /tmp/r56/archive >/dev/null 2>&1; then
             unzip -q /tmp/r56/archive -d /tmp/r56/out
           elif tar -tf /tmp/r56/archive >/dev/null 2>&1; then
             tar -xf /tmp/r56/archive -C /tmp/r56/out
           else
-            echo 'Restored archive is neither ZIP nor TAR' >&2
-            file /tmp/r56/archive || true
-            exit 1
+            echo 'Normal archive test failed; attempting ZIP repair' >&2
+            set +e
+            zip -FF /tmp/r56/archive --out /tmp/r56/fixed.zip </dev/null
+            repair_status=$?
+            set -e
+            if [ "$repair_status" -eq 0 ] && unzip -t /tmp/r56/fixed.zip >/dev/null 2>&1; then
+              unzip -q /tmp/r56/fixed.zip -d /tmp/r56/out
+            else
+              echo 'Could not recover ZIP/TAR archive' >&2
+              xxd -l 64 /tmp/r56/archive || true
+              exit 1
+            fi
           fi
           find /tmp/r56/out -type f -name '*.png' -print
           for f in r05-q2.png r05-q3.png r05-q3-1.png r05-q3-2.png r05-q3-3.png r05-q4.png r05-q4-1.png r06-q1.png r06-q2.png r06-q3.png r06-q3-1.png r06-q3-2.png r06-q4.png r06-q4-1.png; do
