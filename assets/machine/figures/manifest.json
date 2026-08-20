@@ -1,22 +1,22 @@
 {
-  "version": "2026-08-20-2",
+  "version": "2026-08-20-3",
   "basePath": "./assets/machine/figures/",
   "questions": {
-    "r04-machine-01": [],
-    "r04-machine-02": [],
-    "r04-machine-03": [],
-    "r04-machine-04": [],
+    "r04-machine-01": ["r04-q1.png"],
+    "r04-machine-02": ["r04-q2.png", "r04-q2-1.png", "r04-q2-2.png"],
+    "r04-machine-03": ["r04-q3.png", "r04-q3-1.png"],
+    "r04-machine-04": ["r04-q4.png"],
     "r05-machine-01": [],
-    "r05-machine-02": [],
-    "r05-machine-03": [],
-    "r05-machine-04": [],
-    "r06-machine-01": [],
-    "r06-machine-02": [],
+    "r05-machine-02": ["r05-q2.png"],
+    "r05-machine-03": ["r05-q3.png", "r05-q3-1.png", "r05-q3-2.png", "r05-q3-3.png"],
+    "r05-machine-04": ["r05-q4.png", "r05-q4-1.png"],
+    "r06-machine-01": ["r06-q1.png"],
+    "r06-machine-02": ["r06-q2.png"],
     "r06-machine-03": ["r06-q3.png", "r06-q3-1.png", "r06-q3-2.png"],
-    "r06-machine-04": [],
-    "r07-machine-01": [],
-    "r07-machine-02": [],
+    "r06-machine-04": ["r06-q4.png", "r06-q4-1.png"],
+    "r07-machine-01": ["r07-q1.png"],
+    "r07-machine-02": ["r07-q2.png"],
     "r07-machine-03": ["r07-q3.png", "r07-q3-1.png"],
-    "r07-machine-04": []
+    "r07-machine-04": ["r07-q4.png", "r07-q4-1.png"]
   }
 }
