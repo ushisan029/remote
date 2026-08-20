@@ -5,14 +5,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/generate-machine-figures.py'
-      - 'scripts/generate-machine-direct-figures.py'
-      - 'assets/machine/figures/manifest.json'
       - '.github/workflows/generate-machine-figures.yml'
   workflow_dispatch:
-  # Temporary safety trigger: API-authored pushes may not start Actions.
-  # Remove this schedule after all manifest PNGs are generated and verified.
-  schedule:
-    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
@@ -31,17 +25,16 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check pymupdf pillow
-      - name: Generate direct figure assets
-        run: python scripts/generate-machine-direct-figures.py
+      - name: Generate cropped figures
+        run: python scripts/generate-machine-figures.py
       - name: Commit generated assets
         run: |
-          if git diff --quiet -- assets/machine/figures; then
-            echo 'No generated direct figure changes.'
+          if git diff --quiet -- assets/machine; then
+            echo 'No generated asset changes.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/machine/figures
-          git commit -m 'Generate direct machine safety figures'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git add assets/machine
+          git commit -m 'Generate cropped machine safety figures'
+          git push
