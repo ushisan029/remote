@@ -22,8 +22,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/r56 assets/machine/figures
-          cat .r56-transfer/part-* > /tmp/r56/archive.xz.b64
-          base64 -d /tmp/r56/archive.xz.b64 > /tmp/r56/archive.xz
+          : > /tmp/r56/archive.xz
+          for p in .r56-transfer/part-*; do
+            echo "decode $p"
+            base64 -d "$p" >> /tmp/r56/archive.xz
+          done
           xz -t /tmp/r56/archive.xz
           xz -dc /tmp/r56/archive.xz > /tmp/r56/archive
           mkdir -p /tmp/r56/out
