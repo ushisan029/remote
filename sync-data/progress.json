@@ -2,7 +2,7 @@
   "version": 3,
   "format": "rouan-dojo-progress-json-v1",
   "app": "rouan-dojo",
-  "updatedAt": "2026-08-20T23:23:46.593Z",
+  "updatedAt": "2026-08-20T23:26:48.607Z",
   "deviceId": "b6d7d027-0dec-4870-b42c-9660ca8babb0",
   "historyResetAt": null,
   "attempts": [
@@ -189,6 +189,14 @@
       "correct": true,
       "answeredAt": "2026-08-20T23:23:36.692Z",
       "assessmentType": "choice"
+    },
+    {
+      "id": "c42f7e04-1bbd-4242-bf66-612b56880e6f",
+      "questionId": "r05-law-08",
+      "selectedIndex": 3,
+      "correct": true,
+      "answeredAt": "2026-08-20T23:25:56.127Z",
+      "assessmentType": "choice"
     }
   ],
   "manualWeak": [],
@@ -215,11 +223,11 @@
       "updatedAt": "2026-08-16T10:20:23.343Z"
     },
     "industrial_law|past|令和5年度": {
-      "questionId": "r05-law-08",
-      "index": 7,
+      "questionId": "r05-law-09",
+      "index": 8,
       "selected": null,
       "revealed": false,
-      "updatedAt": "2026-08-20T23:23:42.930Z"
+      "updatedAt": "2026-08-20T23:26:17.646Z"
     },
     "machine_safety|past|all": {
       "questionId": "r04-machine-04",
