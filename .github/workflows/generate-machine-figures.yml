@@ -2,7 +2,7 @@ name: Generate machine safety figures
 
 on:
   push:
-    branches: [main, agent/migrate-machine-pngs]
+    branches: [main]
     paths:
       - 'scripts/generate-machine-figures.py'
       - 'scripts/generate-machine-direct-figures.py'
@@ -36,7 +36,7 @@ jobs:
             exit 0
           fi
           git config user.name 'github-actions[bot]'
-          git config user.email '418982506+github-actions[bot]@users.noreply.github.com'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/machine/figures
           git commit -m 'Generate direct machine safety figures'
           git push
