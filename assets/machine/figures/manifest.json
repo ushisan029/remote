@@ -1,7 +1,11 @@
 {
-  "version": "2026-08-21-r05-r07-1",
+  "version": "2026-08-21-r04-r07-prep",
   "basePath": "./assets/machine/figures/",
   "questions": {
+    "r04-machine-01": [],
+    "r04-machine-02": [],
+    "r04-machine-03": [],
+    "r04-machine-04": [],
     "r05-machine-01": [],
     "r05-machine-02": ["r05-q2.png"],
     "r05-machine-03": ["r05-q3.png", "r05-q3-1.png", "r05-q3-2.png", "r05-q3-3.png"],
