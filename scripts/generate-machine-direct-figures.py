@@ -24,11 +24,24 @@ def load_legacy_png(year, q):
     paths = legacy_files(year, q)
     if not all(os.path.exists(p) for p in paths):
         return None
+
     text = "".join(open(p, "r", encoding="utf-8").read() for p in paths)
     text = "".join(text.split())
     if not text.startswith("iVBOR"):
+        print(f"WARNING: legacy image for {year}-q{q} does not look like PNG data")
         return None
-    return Image.open(io.BytesIO(base64.b64decode(text))).convert("RGB")
+
+    try:
+        data = base64.b64decode(text, validate=True)
+        image = Image.open(io.BytesIO(data))
+        image.load()
+        return image.convert("RGB")
+    except Exception as exc:
+        print(
+            f"WARNING: invalid legacy PNG for {year}-q{q}: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        return None
 
 
 def trim_white(im, pad=8):
@@ -134,7 +147,7 @@ def main():
         source = load_legacy_png(year, q)
         if source is None:
             report["missingLegacy"].append(question_id)
-            print(f"WARNING: no legacy PNG source for {question_id}; viewer fallback remains available")
+            print(f"WARNING: no usable legacy PNG source for {question_id}; viewer fallback remains available")
             continue
 
         parts = split_image(source, len(filenames))
