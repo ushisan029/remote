@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - fix/r05-r06-exact-originals
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -73,19 +77,19 @@ jobs:
           set -euo pipefail
           declare -A expected=(
             [r05-q2.png]=9ed09ff3413666440f312e36e19387ba049d3363
-            [r05-q3.png]=320e5d7f69df6e93d8dd50af5cfe42c8900cab4c
-            [r05-q3-1.png]=4b869ca15e0e62c503c930ee86147ad6f93c2c0a
-            [r05-q3-2.png]=1cd61536817709210619036125e178902498dd87
-            [r05-q3-3.png]=260328141a42db5865c9e31cbb209854953c39d5
-            [r05-q4.png]=6df767574c9418d5f4a5b13542d388b4cf6e34ec
-            [r05-q4-1.png]=e7f07e5211611357008fa725f80ff7c19b7bbfd3
-            [r06-q1.png]=14a8736b9aebb88b4bea4c938c7e7505a9850623
-            [r06-q2.png]=07dfaaead74530f7583bb2713788682312e484bd
-            [r06-q3.png]=c3dd5c37dd57df5b52db082fc50e1cb3ecd73e2f
-            [r06-q3-1.png]=f225869b792e163a9746b7087900827a31a1ddb2
+            [r05-q3.png]=9a11f1870edb5591abcf0eeb096f67188c107302
+            [r05-q3-1.png]=fccc69506b5aa0ed11eec8b3a084d080813f398c
+            [r05-q3-2.png]=3664035dec5b471b8ae021576596801d1c62086c
+            [r05-q3-3.png]=fa4412bb0c5ca944dac561f7182b3cca57fa68e6
+            [r05-q4.png]=d1d8ebcf2592f456e17aa27b47f4f711bb25d279
+            [r05-q4-1.png]=7b424e1eea96cebc1b15060d34168433e27c4e37
+            [r06-q1.png]=00ad2001aa2d56b09d2aa55d0b5ad9aca4fb7513
+            [r06-q2.png]=f99de769321c2301048fbb52446317a654465152
+            [r06-q3.png]=b17c2b71c39aec007fb944d66fec724169f22ab1
+            [r06-q3-1.png]=ce9bd505a447c3ba78187bb0abaa67babd62cb5f
             [r06-q3-2.png]=4a5e85f51aa3c1ed1000f69dcc506d8f165a7386
-            [r06-q4.png]=db7ac52886ec26193747f8f2e37be89e44e04eaa
-            [r06-q4-1.png]=5f6f679bf1293d727c7e1b12a372bd3817068629
+            [r06-q4.png]=941a7bc6069ae653177b2fcb38f97ac0f1a09fe9
+            [r06-q4-1.png]=64bf3d444c670bdebdf8939a4364654cf83ba730
           )
           for f in "${!expected[@]}"; do
             actual=$(git hash-object "assets/machine/figures/$f")
