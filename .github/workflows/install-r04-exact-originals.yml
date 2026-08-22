@@ -1,0 +1,134 @@
+name: Install exact R04 supplied PNGs
+
+on:
+  push:
+    branches:
+      - r04-current-exact-originals
+    paths:
+      - r04-current-exact.zip
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r04-current-exact-originals
+          fetch-depth: 0
+
+      - name: Verify supplied ZIP and exact PNGs
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib, zipfile
+
+          zip_path = Path('r04-current-exact.zip')
+          expected_zip = 'b53768a3dc8ba2dc91147a5067577ef6033a7293e83f8811f0c0f76bf19d7b30'
+          actual_zip = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+          print('ZIP SHA-256:', actual_zip)
+          if actual_zip != expected_zip:
+              raise SystemExit(f'ZIP SHA mismatch: {actual_zip}')
+
+          expected = {
+            'r04-q1.png': '2e9989befe9b0b85e15488ac2364975c7b31852abbd229f8a99979dbdefd1932',
+            'r04-q2.png': '4c5cc12f0dc6067326e7319d18cf22446f65357962389f5049b3210721505050',
+            'r04-q2-1.png': 'c6fcd7671440f5aed6ef2fa43ebd321570055dc40ff052e2dc73ea9484ef6d60',
+            'r04-q2-2.png': 'e9a8366b0dac638357212cb41c65f3163ccdb0cee9907aa99bee9515daaf3d4c',
+            'r04-q3.png': '11edcaf06683bc7a395a9c939a7e8a392b6f0651cb63acc0011dfa36a373e92b',
+            'r04-q3-1.png': 'e0ca9686d1bdc22a2b3bb01eaba3b02c7ccd2d586b38efcb0481d16660f72058',
+            'r04-q4.png': '9ce9c6a627ac0eb3e824510797642b7fc20d62fb5849cf120dec54e1e1b6475e',
+          }
+
+          out = Path('/tmp/r04-exact')
+          out.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile(zip_path) as z:
+              names = set(z.namelist())
+              if set(expected) != names:
+                  raise SystemExit(f'Unexpected ZIP files: {sorted(names)}')
+              z.extractall(out)
+
+          target = Path('assets/machine/figures')
+          target.mkdir(parents=True, exist_ok=True)
+          for name, sha in expected.items():
+              data = (out / name).read_bytes()
+              actual = hashlib.sha256(data).hexdigest()
+              if actual != sha:
+                  raise SystemExit(f'{name}: SHA mismatch {actual}')
+              if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+                  raise SystemExit(f'{name}: invalid PNG header')
+              (target / name).write_bytes(data)
+              print(name, len(data), actual)
+
+      - name: Verify exact Git blob SHAs
+        shell: bash
+        run: |
+          set -euo pipefail
+          declare -A expected=(
+            [r04-q1.png]=afe645d93619820a6c77704392c564ba74c88f7d
+            [r04-q2.png]=9cecfe6336684dd3c0974a5c5281c855540cb5ef
+            [r04-q2-1.png]=cf0f7b3ca2b48307d3b6f0f8a454faa11c0ab862
+            [r04-q2-2.png]=19cea76852686fba3fad12103c604c934e15ce32
+            [r04-q3.png]=18e1a0f3251b4f496d1ee9ad423520a3204503c3
+            [r04-q3-1.png]=aaf95f7957b128b51409a0e962af92c007a63c6a
+            [r04-q4.png]=e457e1d5b0db2e1feaee97fade36ac7c11d3b0a1
+          )
+          for f in "${!expected[@]}"; do
+            actual=$(git hash-object "assets/machine/figures/$f")
+            test "$actual" = "${expected[$f]}" || { echo "$f git SHA mismatch: $actual"; exit 1; }
+            echo "$f $actual"
+          done
+
+      - name: Register R04 figures and refresh PWA cache
+        shell: python
+        run: |
+          from pathlib import Path
+          import json, re
+
+          p = Path('assets/machine/figures/manifest.json')
+          m = json.loads(p.read_text())
+          q = m.setdefault('questions', {})
+          r04 = {
+            'r04-machine-01': ['r04-q1.png'],
+            'r04-machine-02': ['r04-q2.png', 'r04-q2-1.png', 'r04-q2-2.png'],
+            'r04-machine-03': ['r04-q3.png', 'r04-q3-1.png'],
+            'r04-machine-04': ['r04-q4.png'],
+          }
+          # Keep existing R05-R07 mappings unchanged while placing R04 first.
+          m['questions'] = {**r04, **{k:v for k,v in q.items() if k not in r04}}
+          m['version'] = '2026-08-23-r04-r07-exact-1'
+          p.write_text(json.dumps(m, ensure_ascii=False, indent=2) + '\n')
+
+          sw = Path('sw.js')
+          s = sw.read_text()
+          match = re.search(r'rouan-dojo-static-v(\d+)', s)
+          if not match:
+              raise SystemExit('PWA cache version not found')
+          n = int(match.group(1)) + 1
+          s = s.replace(match.group(0), f'rouan-dojo-static-v{n}', 1)
+          r04_push = 'CORE.push("./assets/machine/figures/r04-q1.png","./assets/machine/figures/r04-q2.png","./assets/machine/figures/r04-q2-1.png","./assets/machine/figures/r04-q2-2.png","./assets/machine/figures/r04-q3.png","./assets/machine/figures/r04-q3-1.png","./assets/machine/figures/r04-q4.png");\n'
+          if './assets/machine/figures/r04-q1.png' not in s:
+              marker = "self.addEventListener('install'"
+              if marker not in s:
+                  raise SystemExit('Service worker install marker not found')
+              s = s.replace(marker, r04_push + marker, 1)
+          sw.write_text(s)
+          print('PWA cache ->', n)
+
+      - name: Remove one-time installer inputs
+        run: |
+          rm -f r04-current-exact.zip
+          rm -f .github/workflows/install-r04-exact-originals.yml
+
+      - name: Commit exact supplied R04 PNGs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Add exact supplied R04 machine figures'
+          git push origin HEAD:r04-current-exact-originals
