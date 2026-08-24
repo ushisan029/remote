@@ -2,7 +2,7 @@
   "version": 3,
   "format": "rouan-dojo-progress-json-v1",
   "app": "rouan-dojo",
-  "updatedAt": "2026-08-24T08:45:48.885Z",
+  "updatedAt": "2026-08-24T08:46:58.369Z",
   "deviceId": "b6d7d027-0dec-4870-b42c-9660ca8babb0",
   "historyResetAt": null,
   "attempts": [
@@ -261,6 +261,22 @@
       "correct": true,
       "answeredAt": "2026-08-23T07:51:58.591Z",
       "assessmentType": "choice"
+    },
+    {
+      "id": "45700526-a71b-4bb5-ae86-6c53b31b1d72",
+      "questionId": "pred-law-committee-01",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-24T08:46:12.399Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "f567a5cc-4010-4f6e-a083-01169e09adb8",
+      "questionId": "pred-law-committee-01",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-08-24T08:46:41.459Z",
+      "assessmentType": "choice"
     }
   ],
   "manualWeak": [],
@@ -341,6 +357,27 @@
       "selected": null,
       "revealed": false,
       "updatedAt": "2026-08-20T23:33:44.828Z"
+    },
+    "industrial_law|prediction|all": {
+      "questionId": "pred-law-committee-01",
+      "index": 0,
+      "selected": null,
+      "revealed": false,
+      "updatedAt": "2026-08-24T08:46:44.398Z"
+    },
+    "machine_safety|prediction|all": {
+      "questionId": "pred-machine-guard-01",
+      "index": 0,
+      "selected": null,
+      "revealed": false,
+      "updatedAt": "2026-08-24T08:46:49.144Z"
+    },
+    "industrial_general|prediction|all": {
+      "questionId": "pred-general-ra-01",
+      "index": 0,
+      "selected": null,
+      "revealed": false,
+      "updatedAt": "2026-08-24T08:46:51.331Z"
     }
   }
 }
