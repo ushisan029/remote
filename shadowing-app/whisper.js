@@ -1,6 +1,7 @@
 const CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 const MODEL = 'onnx-community/whisper-tiny.en';
 let transcriberPromise = null;
+let activeMode = null;
 
 async function getTransformers() {
   const lib = await import(CDN);
@@ -12,7 +13,7 @@ export function whisperSupport() {
   return {
     webgpu: Boolean(navigator.gpu),
     model: MODEL,
-    mode: navigator.gpu ? 'WebGPU' : 'WASM'
+    mode: activeMode || (navigator.gpu ? 'WebGPU' : 'WASM')
   };
 }
 
@@ -20,13 +21,25 @@ export async function loadWhisper(onProgress = () => {}) {
   if (!transcriberPromise) {
     transcriberPromise = (async () => {
       const { pipeline } = await getTransformers();
-      const options = {
-        progress_callback: (p) => onProgress(p)
-      };
-      if (navigator.gpu) options.device = 'webgpu';
-      return pipeline('automatic-speech-recognition', MODEL, options);
+      const common = { progress_callback: (p) => onProgress(p) };
+
+      if (navigator.gpu) {
+        try {
+          const pipe = await pipeline('automatic-speech-recognition', MODEL, { ...common, device: 'webgpu' });
+          activeMode = 'WebGPU';
+          return pipe;
+        } catch (error) {
+          console.warn('WebGPU Whisper failed; falling back to WASM.', error);
+          onProgress({ status: 'fallback', mode: 'WASM' });
+        }
+      }
+
+      const pipe = await pipeline('automatic-speech-recognition', MODEL, common);
+      activeMode = 'WASM';
+      return pipe;
     })().catch((error) => {
       transcriberPromise = null;
+      activeMode = null;
       throw error;
     });
   }
@@ -36,12 +49,13 @@ export async function loadWhisper(onProgress = () => {}) {
 export async function blobTo16kMono(blob) {
   const arrayBuffer = await blob.arrayBuffer();
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) throw new Error('AudioContext is not supported.');
+  const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!AudioCtx || !OfflineCtx) throw new Error('Web Audio API is not supported.');
   const ctx = new AudioCtx();
   try {
     const decoded = await ctx.decodeAudioData(arrayBuffer.slice(0));
     const frames = Math.ceil(decoded.duration * 16000);
-    const offline = new OfflineAudioContext(1, Math.max(1, frames), 16000);
+    const offline = new OfflineCtx(1, Math.max(1, frames), 16000);
     const source = offline.createBufferSource();
     source.buffer = decoded;
     source.connect(offline.destination);
