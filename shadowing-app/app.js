@@ -27,9 +27,10 @@ let recordChunks = [];
 let recordingStartedAt = 0;
 let currentRecordingUrl = null;
 let deferredInstallPrompt = null;
+let discardRecording = false;
 
 function escapeHtml(value = '') {
-  return value.replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  return String(value).replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
 
 function phrase() { return data.lessons[currentLesson]?.phrases[currentPhrase]; }
@@ -150,6 +151,7 @@ function supportedMimeType() {
 
 async function startRecording() {
   try {
+    discardRecording = false;
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
     recordChunks = [];
     const mimeType = supportedMimeType();
@@ -168,15 +170,24 @@ async function startRecording() {
 }
 
 function stopRecording() {
+  discardRecording = false;
   if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
 }
 
 async function handleRecordingStop() {
+  const shouldDiscard = discardRecording;
+  discardRecording = false;
   const durationMs = performance.now() - recordingStartedAt;
   els.recordBtn.classList.remove('recording');
   els.recordBtn.textContent = '🎤 もう一度録音';
   mediaStream?.getTracks().forEach((t) => t.stop());
   mediaStream = null;
+
+  if (shouldDiscard) {
+    recordChunks = [];
+    return;
+  }
+
   const blob = new Blob(recordChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
   if (currentRecordingUrl) URL.revokeObjectURL(currentRecordingUrl);
   currentRecordingUrl = URL.createObjectURL(blob);
@@ -199,7 +210,7 @@ async function gradeRecording(blob) {
         els.recordStatus.textContent = `AIモデル準備中… ${Math.round(p.progress)}%`;
       }
     });
-    els.recordStatus.textContent = '採点できました。音声は外部APIへ送らず、ブラウザ内で処理しています。';
+    els.recordStatus.textContent = '採点できました。音声は外部の音声認識APIへ送らず、ブラウザ内で処理しています。';
     const audioAnalysis = analyzeAudio(result.audio, result.sampleRate);
     const score = scoreShadowing(phrase().english, result.text, audioAnalysis);
     saveScore({ phraseId: phrase().id, target: phrase().english, spoken: result.text, ...score });
@@ -236,7 +247,10 @@ function renderScore(score, spoken) {
 }
 
 function resetRecording() {
-  if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+  if (mediaRecorder?.state === 'recording') {
+    discardRecording = true;
+    mediaRecorder.stop();
+  }
   mediaStream?.getTracks().forEach((t) => t.stop());
   mediaStream = null;
   recordChunks = [];
@@ -248,6 +262,7 @@ function resetRecording() {
 }
 
 function nextStep() {
+  resetRecording();
   if (currentStep < 5) {
     currentStep++;
   } else if (currentPhrase < lesson().phrases.length - 1) {
@@ -259,13 +274,12 @@ function nextStep() {
     renderHome();
     return;
   }
-  resetRecording();
   renderPractice();
 }
 
 function previousStep() {
-  if (currentStep > 0) currentStep--;
   resetRecording();
+  if (currentStep > 0) currentStep--;
   renderPractice();
 }
 
