@@ -2,7 +2,7 @@
   "version": 3,
   "format": "rouan-dojo-progress-json-v1",
   "app": "rouan-dojo",
-  "updatedAt": "2026-09-04T00:48:23.640Z",
+  "updatedAt": "2026-09-04T00:49:04.485Z",
   "deviceId": "b6d7d027-0dec-4870-b42c-9660ca8babb0",
   "historyResetAt": null,
   "attempts": [
@@ -636,6 +636,14 @@
       "selectedIndex": 3,
       "correct": false,
       "answeredAt": "2026-09-04T00:44:20.912Z",
+      "assessmentType": "choice"
+    },
+    {
+      "id": "30b0920e-b666-48cb-958a-2d091865392d",
+      "questionId": "r03-law-15",
+      "selectedIndex": 3,
+      "correct": true,
+      "answeredAt": "2026-09-04T00:48:52.271Z",
       "assessmentType": "choice"
     }
   ],
