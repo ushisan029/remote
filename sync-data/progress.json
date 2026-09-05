@@ -2,7 +2,7 @@
   "version": 3,
   "format": "rouan-dojo-progress-json-v1",
   "app": "rouan-dojo",
-  "updatedAt": "2026-09-05T01:50:28.826Z",
+  "updatedAt": "2026-09-05T01:51:29.088Z",
   "deviceId": "b6d7d027-0dec-4870-b42c-9660ca8babb0",
   "historyResetAt": null,
   "attempts": [
@@ -677,6 +677,14 @@
       "correct": true,
       "answeredAt": "2026-09-05T01:49:51.481Z",
       "assessmentType": "choice"
+    },
+    {
+      "id": "3ec7267b-ad4f-4fed-b74e-d553e4e61361",
+      "questionId": "r06-general-09",
+      "selectedIndex": 1,
+      "correct": true,
+      "answeredAt": "2026-09-05T01:50:34.804Z",
+      "assessmentType": "choice"
     }
   ],
   "manualWeak": [],
@@ -787,11 +795,11 @@
       "updatedAt": "2026-09-04T00:46:52.467Z"
     },
     "industrial_general|past|令和6年度": {
-      "questionId": "r06-general-09",
-      "index": 4,
+      "questionId": "r06-general-18",
+      "index": 5,
       "selected": null,
       "revealed": false,
-      "updatedAt": "2026-09-05T01:49:57.877Z"
+      "updatedAt": "2026-09-05T01:50:58.040Z"
     }
   }
 }
