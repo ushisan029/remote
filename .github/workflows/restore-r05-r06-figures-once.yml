@@ -1,0 +1,104 @@
+name: Restore R05/R06 supplied figures once
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: ${{ github.head_ref == 'feature/r05-r06-direct-figures-v5' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Restore supplied image archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r56 assets/machine/figures
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          parts=sorted(Path('.r56-transfer').glob('part-*'))
+          text=''.join(p.read_text() for p in parts)
+          clean=''.join(re.findall(r'[A-Za-z0-9+/]', text))
+          clean += '=' * ((-len(clean)) % 4)
+          raw=base64.b64decode(clean)
+          Path('/tmp/r56/archive.xz').write_bytes(raw)
+          print('parts=',len(parts),'base64_chars=',len(clean),'decoded_bytes=',len(raw),'magic=',raw[:6].hex())
+          PY
+          set +e
+          xz -dc --ignore-check /tmp/r56/archive.xz > /tmp/r56/archive
+          xz_status=$?
+          set -e
+          echo "xz_status=$xz_status"
+          ls -l /tmp/r56/archive.xz /tmp/r56/archive
+          file /tmp/r56/archive
+          mkdir -p /tmp/r56/out
+          if unzip -t /tmp/r56/archive >/dev/null 2>&1; then
+            unzip -q /tmp/r56/archive -d /tmp/r56/out
+          elif tar -tf /tmp/r56/archive >/dev/null 2>&1; then
+            tar -xf /tmp/r56/archive -C /tmp/r56/out
+          else
+            echo 'Normal archive test failed; attempting ZIP repair' >&2
+            set +e
+            zip -FF /tmp/r56/archive --out /tmp/r56/fixed.zip </dev/null
+            repair_status=$?
+            set -e
+            if [ "$repair_status" -eq 0 ] && unzip -t /tmp/r56/fixed.zip >/dev/null 2>&1; then
+              unzip -q /tmp/r56/fixed.zip -d /tmp/r56/out
+            else
+              echo 'Could not recover ZIP/TAR archive' >&2
+              xxd -l 64 /tmp/r56/archive || true
+              exit 1
+            fi
+          fi
+          find /tmp/r56/out -type f -name '*.png' -print
+          for f in r05-q2.png r05-q3.png r05-q3-1.png r05-q3-2.png r05-q3-3.png r05-q4.png r05-q4-1.png r06-q1.png r06-q2.png r06-q3.png r06-q3-1.png r06-q3-2.png r06-q4.png r06-q4-1.png; do
+            src=$(find /tmp/r56/out -type f -name "$f" -print -quit)
+            test -n "$src" || { echo "Missing $f" >&2; exit 1; }
+            cp "$src" "assets/machine/figures/$f"
+          done
+          file assets/machine/figures/r0{5,6}-q*.png
+      - name: Update manifest and PWA cache
+        shell: python
+        run: |
+          import json, pathlib
+          p=pathlib.Path('assets/machine/figures/manifest.json')
+          m=json.loads(p.read_text())
+          m['version']='2026-08-20-r05-r07-1'
+          q=m.setdefault('questions',{})
+          q.update({
+            'r05-machine-01': [],
+            'r05-machine-02': ['r05-q2.png'],
+            'r05-machine-03': ['r05-q3.png','r05-q3-1.png','r05-q3-2.png','r05-q3-3.png'],
+            'r05-machine-04': ['r05-q4.png','r05-q4-1.png'],
+            'r06-machine-01': ['r06-q1.png'],
+            'r06-machine-02': ['r06-q2.png'],
+            'r06-machine-03': ['r06-q3.png','r06-q3-1.png','r06-q3-2.png'],
+            'r06-machine-04': ['r06-q4.png','r06-q4-1.png'],
+          })
+          p.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n')
+          sw=pathlib.Path('sw.js')
+          s=sw.read_text().replace("rouan-dojo-static-v31","rouan-dojo-static-v32")
+          marker='"./assets/machine/figures/manifest.json",'
+          files=['r05-q2.png','r05-q3.png','r05-q3-1.png','r05-q3-2.png','r05-q3-3.png','r05-q4.png','r05-q4-1.png','r06-q1.png','r06-q2.png','r06-q3.png','r06-q3-1.png','r06-q3-2.png','r06-q4.png','r06-q4-1.png']
+          additions=''.join(f'"./assets/machine/figures/{f}",' for f in files)
+          if '"./assets/machine/figures/r05-q2.png"' not in s:
+            s=s.replace(marker,marker+additions)
+          sw.write_text(s)
+      - name: Remove one-time transfer files
+        run: rm -rf .r56-transfer .github/workflows/restore-r05-r06-figures-once.yml
+      - name: Commit restored figures
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Add supplied R05 and R06 machine figures'
+          git push origin HEAD:${{ github.head_ref }}
