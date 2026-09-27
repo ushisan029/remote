@@ -10,6 +10,16 @@ GitHub Pages 上のPWAから OpenAI Agents API を安全に呼び出すための
 - 今日の優先分野と10問前後の学習メニューをJSONで返却
 - GitHubトークンやOpenAI APIキーはPWAから送信しない
 
+## 使用モデル
+
+既定モデルは、低コスト運用向けの `gpt-6-luna` です。
+
+```toml
+OPENAI_MODEL = "gpt-6-luna"
+```
+
+将来、より複雑な分析だけ高性能モデルへ切り替えたい場合は `wrangler.toml` の `OPENAI_MODEL` を変更できます。アプリ側のコード変更は不要です。
+
 ## OpenAI APIキー
 
 OpenAI Platform のプロジェクトでアプリケーションAPIキーを作成し、Agents APIのセッション操作に必要な `api.agents.read` と `api.agents.write`、モデル推論に必要な `api.responses.write` を許可してください。
