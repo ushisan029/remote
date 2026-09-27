@@ -1,6 +1,11 @@
 (()=>{
   const ENDPOINT_KEY='rouan-ai-endpoint-v1';
   const LAST_RESULT_KEY='rouan-ai-last-result-v1';
+  const DAILY_USAGE_KEY='rouan-ai-daily-usage-v1';
+  const DAILY_LIMIT_KEY='rouan-ai-daily-limit-v1';
+  const DEFAULT_DAILY_LIMIT=5;
+  const MIN_CALL_INTERVAL_MS=5000;
+  let aiInFlight=false;
 
   const style=document.createElement('style');
   style.textContent=`
@@ -15,7 +20,9 @@
     .ai-plan-item h4{margin:0 0 5px}.ai-plan-item p{margin:0 0 8px;color:#536662;line-height:1.55}.ai-plan-actions{display:flex;gap:8px;flex-wrap:wrap}
     .ai-error{padding:12px;border-radius:12px;background:#fff1ef;color:#93261a;line-height:1.65}.ai-ok{padding:10px 12px;border-radius:10px;background:#eef9f5;color:#245b54;line-height:1.6}
     .ai-source{display:inline-block;margin:0 0 10px;padding:4px 8px;border-radius:999px;background:#eaf4f2;color:#355f5a;font-size:12px;font-weight:800}
+    .ai-usage{margin-top:12px;padding:9px 10px;border-radius:10px;background:#f7f8fa;color:#66706d;font-size:12px;line-height:1.55}
     .ai-endpoint-setting input{width:min(520px,100%);box-sizing:border-box;padding:10px;border:1px solid #cbd8d5;border-radius:10px;margin-top:8px}
+    .ai-limit-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.ai-limit-row input{width:86px;margin-top:0}
     .ai-endpoint-buttons{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.ai-endpoint-status{margin-top:8px;font-size:12px;line-height:1.5}
     @media(min-width:760px){.ai-modal{align-items:center}.ai-modal-panel{border-radius:22px}}
   `;
@@ -29,6 +36,45 @@
   const endpoint=()=>normalizeEndpoint(localStorage.getItem(ENDPOINT_KEY)||window.ROUAN_AI_ENDPOINT||'');
   const subjectLabel=id=>state?.data?.SUBJECTS?.find(s=>s.id===id)?.label||id;
   function healthUrl(coachUrl){try{const u=new URL(coachUrl);u.pathname=u.pathname.replace(/\/coach$/,'/health');return u.toString()}catch{return coachUrl.replace(/\/coach$/,'/health')}}
+
+  function localDateKey(){
+    try{return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+    catch{return new Date().toISOString().slice(0,10)}
+  }
+  function dailyLimit(){
+    const n=Number(localStorage.getItem(DAILY_LIMIT_KEY)||DEFAULT_DAILY_LIMIT);
+    return Math.max(1,Math.min(20,Number.isFinite(n)?Math.round(n):DEFAULT_DAILY_LIMIT));
+  }
+  function dailyUsage(){
+    const today=localDateKey();
+    try{
+      const raw=JSON.parse(localStorage.getItem(DAILY_USAGE_KEY)||'{}');
+      if(raw.date===today)return {date:today,count:Math.max(0,Number(raw.count)||0),lastAt:Math.max(0,Number(raw.lastAt)||0)};
+    }catch(_){}
+    return {date:today,count:0,lastAt:0};
+  }
+  function recordAiCall(){
+    const u=dailyUsage(),next={date:u.date,count:u.count+1,lastAt:Date.now()};
+    localStorage.setItem(DAILY_USAGE_KEY,JSON.stringify(next));return next;
+  }
+  function aiUsageStatus(){
+    const u=dailyUsage(),limit=dailyLimit();
+    return `本日のAI利用 ${u.count}/${limit}回`;
+  }
+  function usageText(usage){
+    if(!usage||typeof usage!=='object')return'使用トークンはOpenAI側で記録待ち、または取得できませんでした。';
+    const f=n=>Number(n||0).toLocaleString();
+    return `今回の使用量：入力 ${f(usage.inputTokens)} / 出力 ${f(usage.outputTokens)} / 推論 ${f(usage.reasoningTokens)} / 合計 ${f(usage.totalTokens)} tokens`;
+  }
+  function updateHomeUsageStatus(){
+    const el=document.querySelector('.ai-coach-status');
+    if(!el)return;
+    const configured=Boolean(endpoint());
+    el.textContent=`AI接続先：${configured?'設定済み':'未設定'}。${aiUsageStatus()}。送信するのは学習統計と問題ID等の要約データだけです。`;
+  }
+  function setAiButtonsDisabled(disabled){
+    document.querySelectorAll('[data-ai-run]').forEach(b=>{b.disabled=disabled});
+  }
 
   function buildSummary(){
     const questions=typeof qs==='function'?qs():[];
@@ -111,20 +157,39 @@
       });body.appendChild(box);
     }
     if(result.message){const p=document.createElement('p');p.className='mini';p.textContent=result.message;body.appendChild(p)}
-    try{localStorage.setItem(LAST_RESULT_KEY,JSON.stringify({savedAt:new Date().toISOString(),source,result}))}catch(_){ }
+    if(source.startsWith('AI分析')){
+      const u=document.createElement('div');u.className='ai-usage';u.textContent=`${usageText(data?.usage)}　${aiUsageStatus()}`;body.appendChild(u);
+    }
+    try{localStorage.setItem(LAST_RESULT_KEY,JSON.stringify({savedAt:new Date().toISOString(),source,result,usage:data?.usage||null}))}catch(_){}
   }
 
   function runLocalCoach(){renderResult(modal('今日のおすすめ'),localPlan(),'ローカル分析・無料')}
 
+  function renderAiFallback(body,message){
+    body.innerHTML='';
+    const err=document.createElement('div');err.className='ai-error';err.textContent=message;body.appendChild(err);
+    const actions=document.createElement('div');actions.className='ai-coach-actions';actions.style.marginTop='12px';
+    const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='無料のローカルおすすめを見る';b.onclick=()=>renderResult(body,localPlan(),'ローカル分析・無料');
+    actions.appendChild(b);body.appendChild(actions);
+  }
+
   async function runCoach(){
     const url=endpoint(),body=modal('AI学習コーチ');
-    if(!url){body.innerHTML='<div class="ai-error">AIエンドポイントが未設定です。設定画面の「AI学習コーチ」でCloudflare WorkerのURLを登録してください。無料のローカル分析は設定なしで利用できます。</div>';return}
-    if(!navigator.onLine){body.innerHTML='<div class="ai-error">AI学習コーチはオンライン接続が必要です。無料のローカル分析はオフラインでも利用できます。</div>';return}
-    body.innerHTML='<div class="ai-loading">学習履歴をLunaで分析しています…</div>';
+    if(aiInFlight){renderAiFallback(body,'AI分析を実行中です。完了後にもう一度お試しください。');return}
+    if(!url){renderAiFallback(body,'AIエンドポイントが未設定です。設定画面の「AI学習コーチ」でCloudflare WorkerのURLを登録してください。');return}
+    if(!navigator.onLine){renderAiFallback(body,'AI学習コーチはオンライン接続が必要です。');return}
+    const usage=dailyUsage(),limit=dailyLimit();
+    if(usage.count>=limit){renderAiFallback(body,`本日のAI利用上限（${limit}回）に達しました。上限は設定画面で1〜20回に変更できます。`);return}
+    if(usage.lastAt&&Date.now()-usage.lastAt<MIN_CALL_INTERVAL_MS){renderAiFallback(body,'連続実行を防ぐため数秒空けてから再度お試しください。');return}
+
+    aiInFlight=true;setAiButtonsDisabled(true);
+    const after=recordAiCall();updateHomeUsageStatus();
+    body.innerHTML=`<div class="ai-loading">学習履歴をLunaで分析しています…（本日 ${after.count}/${limit}回）</div>`;
     try{
       const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'today_plan',summary:buildSummary()})});
       const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);renderResult(body,data,`AI分析・${data.model||'Luna'}`);
-    }catch(e){body.innerHTML=`<div class="ai-error">AI学習コーチに接続できませんでした。<br>${esc(e.message||e)}</div>`}
+    }catch(e){renderAiFallback(body,`AI学習コーチに接続できませんでした。${e.message||e}`)}
+    finally{aiInFlight=false;setAiButtonsDisabled(false);updateHomeUsageStatus()}
   }
 
   async function testConnection(value,status){
@@ -134,14 +199,15 @@
       const r=await fetch(healthUrl(url),{cache:'no-store'}),data=await r.json().catch(()=>({}));
       if(!r.ok||!data.ok)throw new Error(data.error||`HTTP ${r.status}`);
       status.className='ai-endpoint-status ai-ok';
-      status.textContent=data.openaiConfigured?`Worker接続OK・${data.model||'モデル不明'}・OpenAI APIキー設定済み`:`Worker接続OK・${data.model||'モデル不明'}・OpenAI APIキーは未設定`;
+      const tuning=[data.reasoningEffort&&`reasoning ${data.reasoningEffort}`,data.textVerbosity&&`verbosity ${data.textVerbosity}`].filter(Boolean).join('・');
+      status.textContent=data.openaiConfigured?`Worker接続OK・${data.model||'モデル不明'}${tuning?'・'+tuning:''}・OpenAI APIキー設定済み`:`Worker接続OK・${data.model||'モデル不明'}${tuning?'・'+tuning:''}・OpenAI APIキーは未設定`;
     }catch(e){status.className='ai-endpoint-status ai-error';status.textContent=`接続できません: ${e.message||e}`}
   }
 
   function injectHome(){
     const content=document.querySelector('.content'),hero=content?.querySelector('.hero');if(!content||!hero||content.querySelector('.ai-coach-card'))return;
     const configured=Boolean(endpoint());
-    const card=document.createElement('section');card.className='ai-coach-card';card.innerHTML=`<h2>🤖 AI学習コーチ</h2><p>正答率・苦手問題・直近の学習履歴から、今日取り組む内容を提案します。</p><div class="ai-coach-actions"><button type="button" class="secondary" data-local-run>無料のローカルおすすめ</button><button type="button" class="primary" data-ai-run>AIで詳しく分析</button></div><div class="ai-coach-status">AI接続先：${configured?'設定済み':'未設定'}。送信するのは学習統計と問題ID等の要約データだけです。</div>`;
+    const card=document.createElement('section');card.className='ai-coach-card';card.innerHTML=`<h2>🤖 AI学習コーチ</h2><p>正答率・苦手問題・直近の学習履歴から、今日取り組む内容を提案します。</p><div class="ai-coach-actions"><button type="button" class="secondary" data-local-run>無料のローカルおすすめ</button><button type="button" class="primary" data-ai-run>AIで詳しく分析</button></div><div class="ai-coach-status">AI接続先：${configured?'設定済み':'未設定'}。${aiUsageStatus()}。送信するのは学習統計と問題ID等の要約データだけです。</div>`;
     hero.insertAdjacentElement('afterend',card);card.querySelector('[data-local-run]').onclick=runLocalCoach;card.querySelector('[data-ai-run]').onclick=runCoach;
   }
 
@@ -150,13 +216,22 @@
     const row=document.createElement('div');row.className='setting-row ai-endpoint-setting';
     const left=document.createElement('div');left.innerHTML='<b>AI学習コーチ</b><div class="mini">Cloudflare Worker のURLを登録します。ルートURLでも /coach URLでも登録できます。OpenAI APIキーはここには入力しません。</div>';
     const input=document.createElement('input');input.type='url';input.placeholder='https://rouan-ai-coach.xxxx.workers.dev';input.value=endpoint();left.appendChild(input);
-    const status=document.createElement('div');status.className='ai-endpoint-status';left.appendChild(status);
+    const limitWrap=document.createElement('div');limitWrap.className='ai-limit-row';
+    const limitLabel=document.createElement('span');limitLabel.className='mini';limitLabel.textContent='1日のAI利用上限';
+    const limitInput=document.createElement('input');limitInput.type='number';limitInput.min='1';limitInput.max='20';limitInput.step='1';limitInput.value=String(dailyLimit());
+    const limitUnit=document.createElement('span');limitUnit.className='mini';limitUnit.textContent='回（端末ごとの誤操作防止）';
+    limitWrap.append(limitLabel,limitInput,limitUnit);left.appendChild(limitWrap);
+    const status=document.createElement('div');status.className='ai-endpoint-status';status.textContent=aiUsageStatus();left.appendChild(status);
     const buttons=document.createElement('div');buttons.className='ai-endpoint-buttons';
-    const save=document.createElement('button');save.type='button';save.className='secondary';save.textContent='保存';save.onclick=()=>{const value=normalizeEndpoint(input.value);input.value=value;localStorage.setItem(ENDPOINT_KEY,value);save.textContent='保存済み';setTimeout(()=>save.textContent='保存',1200)};
+    const save=document.createElement('button');save.type='button';save.className='secondary';save.textContent='保存';save.onclick=()=>{
+      const value=normalizeEndpoint(input.value);input.value=value;localStorage.setItem(ENDPOINT_KEY,value);
+      const limit=Math.max(1,Math.min(20,Number(limitInput.value)||DEFAULT_DAILY_LIMIT));limitInput.value=String(limit);localStorage.setItem(DAILY_LIMIT_KEY,String(limit));
+      status.className='ai-endpoint-status';status.textContent=`保存済み・${aiUsageStatus()}`;updateHomeUsageStatus();save.textContent='保存済み';setTimeout(()=>save.textContent='保存',1200)
+    };
     const test=document.createElement('button');test.type='button';test.className='secondary';test.textContent='接続確認';test.onclick=()=>testConnection(input.value,status);
     buttons.append(save,test);row.append(left,buttons);settings.prepend(row);
   }
 
-  let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;injectHome();injectSettings()})}
+  let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;injectHome();injectSettings();updateHomeUsageStatus()})}
   new MutationObserver(queue).observe(document.documentElement,{subtree:true,childList:true});addEventListener('DOMContentLoaded',queue);queue();
 })();
