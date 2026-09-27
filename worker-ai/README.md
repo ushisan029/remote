@@ -10,6 +10,10 @@ GitHub Pages 上のPWAから OpenAI Agents API を安全に呼び出すための
 - 今日の優先分野と10問前後の学習メニューをJSONで返却
 - GitHubトークンやOpenAI APIキーはPWAから送信しない
 
+## OpenAI APIキー
+
+OpenAI Platform のプロジェクトでアプリケーションAPIキーを作成し、Agents APIのセッション操作に必要な `api.agents.read` と `api.agents.write`、モデル推論に必要な `api.responses.write` を許可してください。
+
 ## デプロイ
 
 `worker-ai` ディレクトリで実行します。

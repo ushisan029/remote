@@ -16,8 +16,8 @@ function trimFence(text){
 
 function parseAgentStream(raw){
   let sessionId=null,delta='',doneText='',failure=null;
-  for(const block of raw.split(/\n\n+/)){
-    const payload=block.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join('\n');
+  for(const block of raw.split(/\r?\n\r?\n+/)){
+    const payload=block.split(/\r?\n/).filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join('\n');
     if(!payload||payload==='[DONE]')continue;
     let event;try{event=JSON.parse(payload)}catch{continue}
     sessionId=sessionId||event.session?.id||event.session_id||null;
