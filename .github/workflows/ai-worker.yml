@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'worker-ai/**'
+      - 'ai-learning-coach.js'
+      - 'index.html'
+      - 'sw.js'
       - '.github/workflows/ai-worker.yml'
   workflow_dispatch:
 
@@ -18,6 +21,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
+      - name: Check PWA JavaScript syntax
+        run: |
+          node --check ai-learning-coach.js
+          node --check sw.js
       - name: Install Worker dependencies
         working-directory: worker-ai
         run: npm install --no-audit --no-fund
