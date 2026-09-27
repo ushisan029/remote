@@ -17,15 +17,19 @@ GitHub Pages で公開する構成です。
 
 ## AI学習コーチ
 
-ホーム画面に「AI学習コーチ」を追加しています。正答率、苦手問題、直近の解答履歴などを要約し、Cloudflare Worker 経由で OpenAI Agents API に送信して、今日の学習メニューを提案します。
+ホーム画面に「AI学習コーチ」を追加しています。
+
+- **無料のローカルおすすめ**: API不要。正答率・苦手問題・未回答数から端末内だけで今日の学習メニューを作成します。
+- **AIで詳しく分析**: Cloudflare Worker 経由で OpenAI Agents API の `gpt-6-luna` に学習統計を送り、学習メニューと理由を提案します。
 
 OpenAI APIキーはGitHub Pagesやブラウザへ保存しません。`worker-ai/` のCloudflare WorkerにSecretとして設定します。
 
-1. `worker-ai/README.md` に従ってWorkerをデプロイ
-2. PWAの「設定 → AI学習コーチ」に `/coach` のURLを登録
-3. ホームの「今日のおすすめを作る」を押す
+1. `worker-ai/README.md` に従ってWorkerをdry-runまたはデプロイ
+2. PWAの「設定 → AI学習コーチ」にWorker URLを登録
+3. 「接続確認」でWorkerの状態を確認
+4. OpenAI APIキー登録後、「AIで詳しく分析」を利用
 
-AI機能が未設定・オフラインでも、従来の問題演習機能はそのまま利用できます。
+APIキー未設定・オフラインでも、従来の問題演習と無料のローカルおすすめは利用できます。
 
 ## 問題画像の追加
 
@@ -38,4 +42,5 @@ AI機能が未設定・オフラインでも、従来の問題演習機能はそ
 既存の機械安全図表は従来の `assets/machine/figures/manifest.json` と `figure-viewer-v2.js` を維持しているため、現在の表示を壊さず段階的に共通画像仕様へ移行できます。
 
 ## Production
-GitHub Pages への本番デプロイは GitHub Actions から実行します。
+
+GitHub Pages への本番デプロイに加え、AI Workerは `.github/workflows/ai-worker.yml` でdry-run検証と手動デプロイに対応しています。
