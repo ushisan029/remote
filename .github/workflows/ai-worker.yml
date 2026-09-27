@@ -21,6 +21,9 @@ jobs:
       - name: Install Worker dependencies
         working-directory: worker-ai
         run: npm install --no-audit --no-fund
+      - name: Unit tests
+        working-directory: worker-ai
+        run: npm test
       - name: Wrangler dry run
         working-directory: worker-ai
         run: npm run deploy:dry-run

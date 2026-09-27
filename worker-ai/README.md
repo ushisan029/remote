@@ -8,16 +8,29 @@ GitHub Pages 上のPWAから OpenAI Agents API を安全に呼び出すための
 - OpenAI Agents API で学習コーチを起動
 - `environment: none` でコード実行環境を作らず分析だけを実行
 - 既定モデルは低コストの `gpt-6-luna`
+- `reasoning.effort: low`、`text.verbosity: low`、`service_tier: default` で日常利用のコストを抑制
 - 今日の優先分野と10問前後の学習メニューをJSONで返却
+- 完了ターンを確認してから結果を返却
+- 可能な場合は入力・出力・推論トークン数をレスポンスへ付与
 - `GET /health` でWorker到達・モデル・OpenAI APIキー設定有無を確認
 - GitHubトークンやOpenAI APIキーはPWAから送信しない
 
 PWA側にはAPIを使わない「無料のローカルおすすめ」もあり、OpenAI API未設定でも利用できます。
 
-## 使用モデル
+## 使用モデルとコスト設定
 
 ```toml
 OPENAI_MODEL = "gpt-6-luna"
+```
+
+WorkerはAgents APIへ次の設定を送ります。
+
+```json
+{
+  "reasoning": { "effort": "low" },
+  "text": { "verbosity": "low" },
+  "service_tier": "default"
+}
 ```
 
 将来、より複雑な分析だけ高性能モデルへ切り替えたい場合は `wrangler.toml` の `OPENAI_MODEL` を変更できます。PWA側のコード変更は不要です。
@@ -28,10 +41,11 @@ Node.js と npm が使える環境で `worker-ai` ディレクトリを開きま
 
 ```bash
 npm install
+npm test
 npm run deploy:dry-run
 ```
 
-`deploy:dry-run` はCloudflareへ公開せず、WranglerがWorkerを正しくビルドできるか確認します。
+`npm test` はSSE解析、入力検証、AI出力の正規化、使用トークン変換を確認します。`deploy:dry-run` はCloudflareへ公開せず、WranglerがWorkerを正しくビルドできるか確認します。
 
 ## Cloudflareへのデプロイ
 
@@ -54,8 +68,11 @@ https://rouan-ai-coach.<account>.workers.dev/health
 {
   "ok": true,
   "service": "rouan-ai-coach",
-  "version": "2026-09-27.2",
+  "version": "2026-09-27.3",
   "model": "gpt-6-luna",
+  "reasoningEffort": "low",
+  "textVerbosity": "low",
+  "serviceTier": "default",
   "openaiConfigured": false
 }
 ```
@@ -66,8 +83,8 @@ PWAの「設定 → AI学習コーチ」にはWorkerのルートURLまたは `/c
 
 `.github/workflows/ai-worker.yml` を追加しています。
 
-- Pull Request時: Workerのdry-run検証のみ
-- 手動実行時: Cloudflareへデプロイ
+- Pull Request時: `npm test` とWorkerのdry-run検証
+- 手動実行時: 同じ検証後にCloudflareへデプロイ
 
 GitHub Actionsからデプロイする場合は、リポジトリのActions secretsに次の2つを登録します。
 
@@ -141,7 +158,15 @@ OpenAIを呼び出さず、Workerの状態を返します。
 {
   "ok": true,
   "sessionId": "sess_...",
+  "turnId": "turn_...",
   "model": "gpt-6-luna",
+  "usage": {
+    "inputTokens": 1000,
+    "cachedInputTokens": 0,
+    "outputTokens": 200,
+    "reasoningTokens": 50,
+    "totalTokens": 1200
+  },
   "result": {
     "summary": "...",
     "priorities": [],
@@ -150,6 +175,8 @@ OpenAIを呼び出さず、Workerの状態を返します。
   }
 }
 ```
+
+`usage` はOpenAI側で記録できた場合のみ値が入ります。記録値はbest-effortで、最終請求額そのものではありません。
 
 Worker側で科目・学習モード・件数を再検証し、想定外のAI出力をそのままPWAへ渡さないようにしています。
 
