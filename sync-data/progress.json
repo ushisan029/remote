@@ -2,7 +2,7 @@
   "version": 3,
   "format": "rouan-dojo-progress-json-v1",
   "app": "rouan-dojo",
-  "updatedAt": "2026-09-27T07:58:28.407Z",
+  "updatedAt": "2026-09-27T08:22:53.049Z",
   "deviceId": "b6d7d027-0dec-4870-b42c-9660ca8babb0",
   "historyResetAt": null,
   "attempts": [
@@ -1038,6 +1038,13 @@
       "selected": null,
       "revealed": false,
       "updatedAt": "2026-09-11T14:33:50.167Z"
+    },
+    "industrial_general|weak|all": {
+      "questionId": "r06-general-30",
+      "index": 0,
+      "selected": null,
+      "revealed": false,
+      "updatedAt": "2026-09-27T08:22:21.761Z"
     }
   }
 }
