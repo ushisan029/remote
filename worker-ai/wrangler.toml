@@ -1,0 +1,10 @@
+name = "rouan-ai-coach"
+main = "src/index.js"
+compatibility_date = "2026-09-27"
+
+[vars]
+ALLOWED_ORIGIN = "https://ushisan029.github.io"
+OPENAI_MODEL = "gpt-6-astra"
+
+[secrets]
+required = ["OPENAI_API_KEY"]
