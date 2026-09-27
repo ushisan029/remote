@@ -11,8 +11,21 @@
 - 苦手問題の自動ストック
 - 学習履歴の端末内保存とバックアップ/復元
 - 問題画像・解説画像の後付け表示
+- AI学習コーチ（Agents API 接続）
 
 GitHub Pages で公開する構成です。
+
+## AI学習コーチ
+
+ホーム画面に「AI学習コーチ」を追加しています。正答率、苦手問題、直近の解答履歴などを要約し、Cloudflare Worker 経由で OpenAI Agents API に送信して、今日の学習メニューを提案します。
+
+OpenAI APIキーはGitHub Pagesやブラウザへ保存しません。`worker-ai/` のCloudflare WorkerにSecretとして設定します。
+
+1. `worker-ai/README.md` に従ってWorkerをデプロイ
+2. PWAの「設定 → AI学習コーチ」に `/coach` のURLを登録
+3. ホームの「今日のおすすめを作る」を押す
+
+AI機能が未設定・オフラインでも、従来の問題演習機能はそのまま利用できます。
 
 ## 問題画像の追加
 
