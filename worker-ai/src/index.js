@@ -53,7 +53,7 @@ export default {
 
     let upstream;
     try{
-      upstream=await fetch(OPENAI_URL,{method:'POST',headers:{'Authorization':`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json','OpenAI-Beta':'agents=v1'},body:JSON.stringify({agent:{model:env.OPENAI_MODEL||'gpt-6-astra',instructions},environment:{type:'none'},input,stream:true})});
+      upstream=await fetch(OPENAI_URL,{method:'POST',headers:{'Authorization':`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json','OpenAI-Beta':'agents=v1'},body:JSON.stringify({agent:{model:env.OPENAI_MODEL||'gpt-6-luna',instructions},environment:{type:'none'},input,stream:true})});
     }catch(e){return json({error:`OpenAI request failed: ${e.message||e}`},502,origin,env)}
     const raw=await upstream.text();
     if(!upstream.ok)return json({error:`OpenAI API error (${upstream.status}).`,detail:raw.slice(0,1000)},502,origin,env);
