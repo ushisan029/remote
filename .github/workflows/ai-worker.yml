@@ -5,6 +5,7 @@ on:
     paths:
       - 'worker-ai/**'
       - 'ai-learning-coach.js'
+      - 'local-webllm-coach.js'
       - 'index.html'
       - 'sw.js'
       - '.github/workflows/ai-worker.yml'
@@ -24,6 +25,7 @@ jobs:
       - name: Check PWA JavaScript syntax
         run: |
           node --check ai-learning-coach.js
+          node --check local-webllm-coach.js
           node --check sw.js
       - name: Install Worker dependencies
         working-directory: worker-ai
