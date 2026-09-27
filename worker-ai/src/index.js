@@ -1,9 +1,19 @@
 const OPENAI_URL='https://api.openai.com/v1/agents/sessions';
+const SERVICE_VERSION='2026-09-27.2';
+const SUBJECTS=new Set(['industrial_general','industrial_law','machine_safety']);
+const MODES=new Set(['weak','past','prediction']);
 
 function corsHeaders(origin,env){
   const configured=String(env.ALLOWED_ORIGIN||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const allowed=!configured.length||configured.includes(origin);
-  return {allowed,headers:{'Access-Control-Allow-Origin':allowed?(origin||'*'):'null','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type','Vary':'Origin','Content-Type':'application/json; charset=utf-8'}};
+  const allowed=!origin||!configured.length||configured.includes(origin);
+  return {allowed,headers:{
+    'Access-Control-Allow-Origin':allowed?(origin||'*'):'null',
+    'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers':'Content-Type',
+    'Cache-Control':'no-store',
+    'Vary':'Origin',
+    'Content-Type':'application/json; charset=utf-8'
+  }};
 }
 
 function json(data,status,origin,env){
@@ -30,9 +40,24 @@ function parseAgentStream(raw){
 
 function validateSummary(summary){
   if(!summary||typeof summary!=='object')return false;
-  if(!Array.isArray(summary.subjects))return false;
+  if(!Array.isArray(summary.subjects)||summary.subjects.length>10)return false;
   if(!summary.overall||typeof summary.overall!=='object')return false;
+  if(Array.isArray(summary.weakQuestions)&&summary.weakQuestions.length>30)return false;
+  if(Array.isArray(summary.hardQuestions)&&summary.hardQuestions.length>30)return false;
+  if(Array.isArray(summary.recent)&&summary.recent.length>30)return false;
   return true;
+}
+
+function normalizeResult(raw){
+  if(!raw||typeof raw!=='object')return {summary:String(raw||''),priorities:[],plan:[],message:''};
+  const priorities=Array.isArray(raw.priorities)?raw.priorities.filter(x=>x&&SUBJECTS.has(x.subject)).slice(0,3).map(x=>({subject:x.subject,reason:String(x.reason||'').slice(0,300)})):[];
+  const plan=Array.isArray(raw.plan)?raw.plan.filter(x=>x&&SUBJECTS.has(x.subject)&&MODES.has(x.mode)).slice(0,3).map(x=>({subject:x.subject,mode:x.mode,count:Math.max(1,Math.min(10,Number(x.count)||1)),reason:String(x.reason||'').slice(0,300)})):[];
+  return {
+    summary:String(raw.summary||raw.text||'').slice(0,1200),
+    priorities,
+    plan,
+    message:String(raw.message||'').slice(0,500)
+  };
 }
 
 export default {
@@ -41,8 +66,19 @@ export default {
     const cors=corsHeaders(origin,env);
     if(request.method==='OPTIONS')return new Response(null,{status:cors.allowed?204:403,headers:cors.headers});
     if(!cors.allowed)return json({error:'Origin is not allowed.'},403,origin,env);
+
+    if(request.method==='GET'&&(url.pathname==='/'||url.pathname==='/health')){
+      return json({
+        ok:true,
+        service:'rouan-ai-coach',
+        version:SERVICE_VERSION,
+        model:env.OPENAI_MODEL||'gpt-6-luna',
+        openaiConfigured:Boolean(env.OPENAI_API_KEY)
+      },200,origin,env);
+    }
+
     if(url.pathname!=='/coach'||request.method!=='POST')return json({error:'Not found.'},404,origin,env);
-    if(!env.OPENAI_API_KEY)return json({error:'OPENAI_API_KEY is not configured.'},500,origin,env);
+    if(!env.OPENAI_API_KEY)return json({error:'OPENAI_API_KEY is not configured.'},503,origin,env);
 
     const length=Number(request.headers.get('Content-Length')||0);if(length>100000)return json({error:'Request is too large.'},413,origin,env);
     let payload;try{payload=await request.json()}catch{return json({error:'Invalid JSON.'},400,origin,env)}
@@ -60,7 +96,7 @@ export default {
 
     const parsed=parseAgentStream(raw);if(parsed.failure)return json({error:`Agent failed: ${parsed.failure}`},502,origin,env);
     if(!parsed.text)return json({error:'Agent completed without readable output.'},502,origin,env);
-    let result;try{result=JSON.parse(trimFence(parsed.text))}catch{result={text:parsed.text}}
-    return json({ok:true,sessionId:parsed.sessionId,result},200,origin,env);
+    let result;try{result=normalizeResult(JSON.parse(trimFence(parsed.text)))}catch{result=normalizeResult({text:parsed.text})}
+    return json({ok:true,sessionId:parsed.sessionId,model:env.OPENAI_MODEL||'gpt-6-luna',result},200,origin,env);
   }
 };
